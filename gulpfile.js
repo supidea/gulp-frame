@@ -25,7 +25,7 @@ const srcPath = {
   css: './src/css/*',
   img: './src/images/**/*',
   fonts: './src/fonts/*',
-  js: ['./src/js/**/*']
+  js: './src/js/**/*.js'
 }
 
 const disPath = {
@@ -40,13 +40,13 @@ const disPath = {
 
 // fonts处理 
 gulp.task('fonts', () => {
-  return gulp.src(srcPath.fonts, {base: '.'})
+  return gulp.src(srcPath.fonts, {base: './src/'})
     .pipe(gulp.dest(disPath.fonts))
 })
 
 // html处理
 gulp.task('html', () => {
-  return gulp.src(srcPath.html)
+  return gulp.src(srcPath.html, {base: './src/'})
     .pipe(gulp.dest(disPath.html))
 })
 
@@ -54,6 +54,7 @@ gulp.task('html', () => {
 gulp.task('clean', () => {
   return gulp.src('./dist', { read: false }).pipe(clean())
 })
+
 /** 开发环境 */
 
 // LESS处理
@@ -69,7 +70,7 @@ gulp.task('less:dev', () => {
 
 // JS处理
 gulp.task('scripts:dev', () => {
-  return gulp.src(srcPath.js)
+  return gulp.src(srcPath.js, {base: './src/js/'})
     .pipe(gulp.dest(disPath.js))
     .pipe(browserSync.stream())
 })
@@ -104,12 +105,11 @@ gulp.task('watch', ['serve'], () => {
   gulp.watch(srcPath.css, ['css:dev'])
   gulp.watch(srcPath.img, ['images:dev'])
   gulp.watch(srcPath.html, ['html']).on('change', browserSync.reload)
-  gulp.watch('./src/json/*.json', ['json'])
 })
 
 // 开发环境
 gulp.task('dev', ['clean'], () => {
-  gulp.start('fonts', 'html', 'images:dev', 'css:dev', 'less:dev', 'watch', 'json', 'scripts:dev')
+  gulp.start('fonts', 'html', 'images:dev', 'css:dev', 'less:dev', 'watch', 'scripts:dev')
 })
 
 
@@ -124,19 +124,6 @@ gulp.task('less', () => {
     .pipe(autoprefixer())
     .pipe(minifyCSS())
     .pipe(gulp.dest(disPath.css))
-})
-
-// JS处理
-gulp.task('scripts', () => {
-  return gulp.src(['./src/js/libs/*.js', './src/js/*.js'],{base: './src/js/'})
-    .pipe(uglify())
-    .pipe(gulp.dest(disPath.js))
-})
-
-// JSON处理
-gulp.task('json', () => {
-  return gulp.src('./src/json/*.json')
-    .pipe(gulp.dest('./dist/json/'))
 })
 
 // CSS处理
@@ -154,17 +141,24 @@ gulp.task('images', () => {
 })
 
 // require 打包
-gulp.task('rjs', ['clean'], function () {
-  return gulp.src('src/js/entry/*.js')
+gulp.task('rjs', function () {
+  return gulp.src('./src/js/pages/*.js')
     .pipe(requirejsOptimize({
-      mainConfigFile: 'src/js/rConfig.js',
+      mainConfigFile: './src/js/rConfig.js',
       optimize: 'uglify',
       exclude: ['jquery', 'bootstrap']
     }))
-    .pipe(gulp.dest("dist/js/entry"))
+    .pipe(gulp.dest("./dist/js/pages"))
+})
+
+// JS处理
+gulp.task('scripts',['clean'], () => {
+  gulp.src([srcPath.js, "!./src/js/{modules,pages}/*.js"], {base: './src/js/'})
+    .pipe(uglify())
+    .pipe(gulp.dest(disPath.js))
 })
 
 // 生产打包
-gulp.task('build', ['clean'], () => {
-  gulp.start('fonts', 'images', 'scripts', 'less', 'css', 'html', 'json', 'rjs')
+gulp.task('build', ['scripts'], () => {
+  gulp.start('fonts', 'images', 'less', 'css', 'html', 'rjs')
 })
